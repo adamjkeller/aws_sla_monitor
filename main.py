@@ -7,11 +7,8 @@ import re
 class AwsSlaCrawler(object):
     
     def __init__(self):
-        self.urls = {
-            'Compute': 'https://aws.amazon.com/compute/sla/',
-            'Lambda': 'https://aws.amazon.com/lambda/sla/',
-            'S3': 'https://aws.amazon.com/s3/sla/',
-        }
+        self.sla_main_page = 'https://aws.amazon.com/legal/service-level-agreements/'
+        self.query_details = {"div": {"class": "aws-text-box section"}}
     
     def get_body(self, url):
         return(
@@ -24,8 +21,28 @@ class AwsSlaCrawler(object):
         )
 
     def retrieve_updated_date(self, soup_data):
+        """
+        As expected, not all pages are the same. Some have different HTML formatting so if the id doesn't contain Last Updated, we try 'p' which seems to work
+        """
+        try:
+            return(
+                soup_data.find(id=re.compile('^Last_Updated')).text
+            )
+        except AttributeError:
+            return(
+                [x.getText() for x in soup_data.findAll('p') if 'Last Updated' in x.getText()][0]
+            )
+        else:
+            print("SOMETHING WENT WRONG")
+
+    def create_service_list(self):
+        response = self.get_body(self.sla_main_page)
+        soup = self.soup_it(response)
+        element = list(self.query_details.keys())[0]
+        values = self.query_details.get(element)
+        sla_div = soup.findAll(element, values)[0]
         return(
-            soup_data.find(id=re.compile('^Last_Updated')).text
+            [url['href'] for url in sla_div.findAll('a', href=True)]
         )
 
     def compare_against_current_dataset(self, dynamo_backend, input_data):
@@ -35,11 +52,12 @@ class AwsSlaCrawler(object):
         pass
 
     def main(self):
-        for service, url in self.urls.items():
+        service_list = self.create_service_list()
+        for url in service_list:
             body = self.get_body(url=url)
             soup = self.soup_it(html=body)
             print("{}: {}".format(
-                service,
+                url,
                 self.retrieve_updated_date(soup_data=soup))
             )
 
