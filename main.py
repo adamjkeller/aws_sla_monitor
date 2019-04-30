@@ -7,9 +7,11 @@ import re
 class AwsSlaCrawler(object):
     
     def __init__(self):
-        self.urls = [
-            'https://aws.amazon.com/compute/sla/'
-        ]
+        self.urls = {
+            'Compute': 'https://aws.amazon.com/compute/sla/',
+            'Lambda': 'https://aws.amazon.com/lambda/sla/',
+            'S3': 'https://aws.amazon.com/s3/sla/',
+        }
     
     def get_body(self, url):
         return(
@@ -26,9 +28,6 @@ class AwsSlaCrawler(object):
             soup_data.find(id=re.compile('^Last_Updated')).text
         )
 
-    def sanitize_data(self, data):
-        pass
-
     def compare_against_current_dataset(self, dynamo_backend, input_data):
         pass
 
@@ -36,10 +35,13 @@ class AwsSlaCrawler(object):
         pass
 
     def main(self):
-        for url in self.urls:
+        for service, url in self.urls.items():
             body = self.get_body(url=url)
             soup = self.soup_it(html=body)
-            print(self.retrieve_updated_date(soup_data=soup))
+            print("{}: {}".format(
+                service,
+                self.retrieve_updated_date(soup_data=soup))
+            )
 
 if __name__ == '__main__':
     AwsSlaCrawler().main()
