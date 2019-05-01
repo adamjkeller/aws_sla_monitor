@@ -2,14 +2,19 @@
 
 from bs4 import BeautifulSoup
 from requests import get
+from src.dynamodb import DynamoDB
 import re
+
+# TODO: A lot of try/catch logic is missing here
 
 class AwsSlaCrawler(object):
     
-    def __init__(self):
+    def __init__(self, debug_mode=False):
         self.sla_main_page = 'https://aws.amazon.com/legal/service-level-agreements/'
         self.query_details = {"div": {"class": "aws-text-box section"}}
-    
+        self.debug_mode = debug_mode
+        self.dynamo = DynamoDB(debug_mode=debug_mode)
+
     def get_body(self, url):
         return(
             get(url).text
@@ -45,23 +50,40 @@ class AwsSlaCrawler(object):
             [url['href'] for url in sla_div.findAll('a', href=True)]
         )
 
-    def compare_against_current_dataset(self, dynamo_backend, input_data):
-        pass
+    def convert_date_to_epoch(self, updated_date):
+        from time import mktime, strptime
+        updated_date = updated_date.replace('th', '')
+        pattern = '%B %d, %Y'
+        return(
+            int(mktime(strptime(updated_date, pattern))) # This is nasty. Literally turning result into an int to avoid float, then back to a string. yay.
+        )
 
-    def update_data_set(self, dynamo_backend):
-        pass
+    def debug_output(self, service_name, updated_date):
+        print("{}: {}".format(
+            service_name,
+            updated_date
+        ))
 
     def main(self):
         service_list = self.create_service_list()
+
         for url in service_list:
+
             body = self.get_body(url=url)
             soup = self.soup_it(html=body)
             service_name = url.split('/')[3]
-            updated_date = self.retrieve_updated_date(soup_data=soup).replace(':','').split('Last Updated')[1].strip(' ')
-            print("{}: {}".format(
-                service_name,
-                updated_date
-            ))
+            updated_date = self.retrieve_updated_date(soup_data=soup).replace(':','').split('Last Updated')[1].strip(' ') # Yuck, please don't judge me.
+            epoch = self.convert_date_to_epoch(updated_date)
+
+            if self.debug_mode:
+                self.debug_output(service_name, updated_date)
+
+            db_results = self.dynamo.query_db(service_name, updated_date)
+            update_required = self.dynamo.compare_against_current_dataset(db_results=db_results, current_epoch=epoch)
+
+            if update_required:
+                self.dynamo.update_data_set(service_name, epoch)
+
 
 if __name__ == '__main__':
     AwsSlaCrawler().main()

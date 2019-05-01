@@ -14,3 +14,6 @@ aws dynamodb create-table \
 
 # List the tables to confirm that it exists
 aws dynamodb list-tables --endpoint-url http://localhost:8000
+
+# Update record for testing
+#aws dynamodb put-item --endpoint-url http://localhost:8000 --table-name AWS_SLA_MONITOR --item file://update.json
