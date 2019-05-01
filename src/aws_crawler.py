@@ -2,7 +2,7 @@
 
 from bs4 import BeautifulSoup
 from requests import get
-from src.dynamodb import DynamoDB
+from dynamodb import DynamoDB
 import re
 
 # TODO: A lot of try/catch logic is missing here

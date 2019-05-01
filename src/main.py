@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from src.aws_crawler import AwsSlaCrawler
+from aws_crawler import AwsSlaCrawler
 
 if __name__ == '__main__':
     _debug = True
