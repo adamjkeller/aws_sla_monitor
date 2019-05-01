@@ -6,23 +6,30 @@ import boto3
 
 class DynamoDB(object):
 
-    def __init__(self, debug_mode):
+    def __init__(self, debug_mode, local_mode=False, endpoint=None):
         self.debug_mode = debug_mode
-        self.dynamo_client = self.set_dynamo_client(endpoint='localhost:8000')
+        self.endpoint = endpoint 
+        self.local_mode = local_mode
+        self.dynamo_client = self.set_dynamo_client(endpoint=self.endpoint)
         self.dynamo_table_details = {
-            "Name": "AWS_SLA_MONITOR", 
+            "Name": "aws_sla_monitor", 
             "Attributes": {
-                "SERVICE_NAME": "HASH",
-                "LAST_UPDATED_DATE": "RANGE"
+                "service_name": "HASH",
+                "last_updated_date": "RANGE"
             }
         }        
 
     def set_dynamo_client(self, endpoint):
-        return boto3.resource('dynamodb', endpoint_url="http://{}".format(endpoint))  
+        if self.local_mode: 
+            endpoint = "http://" + endpoint
+        else:
+            endpoint = None
+
+        return boto3.resource("dynamodb", endpoint_url=endpoint)
 
     def query_db(self, service_name, updated_date):
         return self.dynamo_client.Table(self.dynamo_table_details['Name']).query(
-                    KeyConditionExpression=Key('SERVICE_NAME').eq(service_name)
+                    KeyConditionExpression=Key('service_name').eq(service_name)
                 )
 
     def compare_against_current_dataset(self, db_results, current_epoch):
@@ -30,7 +37,7 @@ class DynamoDB(object):
         time_stamps = list()
         if db_results['Count'] > 0:
             for values in attributes:
-                time_stamps.append(values['LAST_UPDATED_DATE'])
+                time_stamps.append(values['last_updated_date'])
         
         if str(current_epoch) in time_stamps:
             if self.debug_mode:
@@ -44,7 +51,7 @@ class DynamoDB(object):
 
     def update_data_set(self, service_name, epoch):
         print(
-            "Updating Database with the following attributes: SERVICE_NAME: {}, LAST_UPDATED_DATE: {}".format(
+            "Updating Database with the following attributes: service_name: {}, last_updated_date: {}".format(
                 service_name, epoch
             )   
         )
@@ -52,8 +59,8 @@ class DynamoDB(object):
         print(
             self.dynamo_client.Table(self.dynamo_table_details['Name']).put_item(
                 Item={
-                    'SERVICE_NAME': service_name,
-                    'LAST_UPDATED_DATE': str(epoch)
+                    'service_name': service_name,
+                    'last_updated_date': str(epoch)
                 },
             )
         )
