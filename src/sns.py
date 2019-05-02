@@ -20,7 +20,7 @@ class SNSUpdate(object):
                 updated_date = strftime('%B %d, %Y', localtime(int(updated_date)))
                 _message += "{}: {}\n".format(service_name, updated_date)
 
-        return """A change has been made to one or more of the SLA pages for an AWS Service. Please review the below services that had a change:\n\n{}""".format(_message)
+        return """An update has been made to one or more of the published SLA pages for an AWS Service. Please review the below services that had a change:\n\n{}\n\nCheck SLA's here: https://aws.amazon.com/legal/service-level-agreements/""".format(_message)
 
     def sns_notification(self, service_list):
         message = self.message(service_list)
@@ -37,5 +37,6 @@ def lambda_handler(event, context):
         if record['eventName'] == 'INSERT':
             ddb_record = record['dynamodb']['Keys']
             updated_service_list.append({ddb_record['service_name']['S']: ddb_record['last_updated_date']['S']})
-            
-    SNSUpdate().sns_notification(service_list=updated_service_list)
+    
+    if updated_service_list:
+        SNSUpdate().sns_notification(service_list=updated_service_list)

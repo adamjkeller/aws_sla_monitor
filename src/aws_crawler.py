@@ -10,6 +10,7 @@ import re
 class AwsSlaCrawler(object):
     
     def __init__(self, debug_mode=False, local_mode=False):
+        #self.sla_main_page = 'https://s3-us-west-2.amazonaws.com/sla-monitor-testing/sla_page.html' ## For Testing purposes
         self.sla_main_page = 'https://aws.amazon.com/legal/service-level-agreements/'
         self.query_details = {"div": {"class": "aws-text-box section"}}
         self.debug_mode = debug_mode

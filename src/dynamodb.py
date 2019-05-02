@@ -6,7 +6,7 @@ import boto3
 
 class DynamoDB(object):
 
-    def __init__(self, debug_mode, local_mode=False, endpoint=None):
+    def __init__(self, debug_mode, local_mode=False, endpoint='localhost:8000'):
         self.debug_mode = debug_mode
         self.endpoint = endpoint 
         self.local_mode = local_mode
@@ -21,7 +21,7 @@ class DynamoDB(object):
 
     def set_dynamo_client(self, endpoint):
         if self.local_mode: 
-            endpoint = "http://" + endpoint
+            endpoint = "http://" + self.endpoint
         else:
             endpoint = None
 
