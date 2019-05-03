@@ -74,7 +74,7 @@ class AwsSlaCrawler(object):
             body = self.get_body(url=url)
             soup = self.soup_it(html=body)
             service_name = url.split('/')[3]
-            updated_date = self.retrieve_updated_date(soup_data=soup).replace(':','').split('Last Updated')[1].strip(' ') # Yuck, please don't judge me.
+            updated_date = self.retrieve_updated_date(soup_data=soup).replace(':','').replace('*','').split('Last Updated')[1].strip(' ') # Yuck, please don't judge me. This should be a regex.
             epoch = self.convert_date_to_epoch(updated_date)
 
             if self.debug_mode:

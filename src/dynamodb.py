@@ -27,6 +27,9 @@ class DynamoDB(object):
 
         return boto3.resource("dynamodb", endpoint_url=endpoint)
 
+    def scan_table(self, table_name):
+        return self.dynamo_client.Table(table_name).scan()
+
     def query_db(self, service_name, updated_date):
         return self.dynamo_client.Table(self.dynamo_table_details['Name']).query(
                     KeyConditionExpression=Key('service_name').eq(service_name)
