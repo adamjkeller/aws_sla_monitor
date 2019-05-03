@@ -64,3 +64,14 @@ class DynamoDB(object):
                 },
             )
         )
+
+    def update_stream_data_set(self, service_name, epoch_changed_date, epoch_expiry, table_name):
+        print(
+            self.dynamo_client.Table(table_name).put_item(
+                Item={
+                    'service_name': service_name,
+                    'last_updated_date': str(epoch_changed_date),
+                    'expiration_time': int(epoch_expiry)
+                },
+            )
+        )    

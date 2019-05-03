@@ -1,0 +1,119 @@
+{
+	"Records": [{
+		"eventID": "838c271f23382e886ed4acb6c658e76e",
+		"eventName": "INSERT",
+		"eventVersion": "1.1",
+		"eventSource": "aws:dynamodb",
+		"awsRegion": "us-west-2",
+		"dynamodb": {
+			"ApproximateCreationDateTime": 1556856625.0,
+			"Keys": {
+				"service_name": {
+					"S": "alexaforbusiness"
+				},
+				"last_updated_date": {
+					"S": "100101"
+				}
+			},
+			"NewImage": {
+				"service_name": {
+					"S": "alexaforbusiness"
+				},
+				"last_updated_date": {
+					"S": "100101"
+				}
+			},
+			"SequenceNumber": "5056900000000001486828229",
+			"SizeBytes": 102,
+			"StreamViewType": "NEW_AND_OLD_IMAGES"
+		},
+		"eventSourceARN": "arn:aws:dynamodb:us-west-2:902607243125:table/aws_sla_monitor/stream/2019-05-02T00:45:09.662"
+	}, {
+		"eventID": "b7fa8fd7cbde85a1c06713f062dd5d01",
+		"eventName": "REMOVE",
+		"eventVersion": "1.1",
+		"eventSource": "aws:dynamodb",
+		"awsRegion": "us-west-2",
+		"dynamodb": {
+			"ApproximateCreationDateTime": 1556856700.0,
+			"Keys": {
+				"service_name": {
+					"S": "alexaforbusiness"
+				},
+				"last_updated_date": {
+					"S": "100101"
+				}
+			},
+			"OldImage": {
+				"service_name": {
+					"S": "alexaforbusiness"
+				},
+				"last_updated_date": {
+					"S": "100101"
+				}
+			},
+			"SequenceNumber": "5057000000000001486843465",
+			"SizeBytes": 102,
+			"StreamViewType": "NEW_AND_OLD_IMAGES"
+		},
+		"eventSourceARN": "arn:aws:dynamodb:us-west-2:902607243125:table/aws_sla_monitor/stream/2019-05-02T00:45:09.662"
+	}, {
+		"eventID": "0288081573af012dde03377a36d36411",
+		"eventName": "REMOVE",
+		"eventVersion": "1.1",
+		"eventSource": "aws:dynamodb",
+		"awsRegion": "us-west-2",
+		"dynamodb": {
+			"ApproximateCreationDateTime": 1556856700.0,
+			"Keys": {
+				"service_name": {
+					"S": "alexaforbusiness"
+				},
+				"last_updated_date": {
+					"S": "100100"
+				}
+			},
+			"OldImage": {
+				"service_name": {
+					"S": "alexaforbusiness"
+				},
+				"last_updated_date": {
+					"S": "100100"
+				}
+			},
+			"SequenceNumber": "5057100000000001486843466",
+			"SizeBytes": 102,
+			"StreamViewType": "NEW_AND_OLD_IMAGES"
+		},
+		"eventSourceARN": "arn:aws:dynamodb:us-west-2:902607243125:table/aws_sla_monitor/stream/2019-05-02T00:45:09.662"
+	}, {
+		"eventID": "c8c5479631768547e1c2eac5cd626135",
+		"eventName": "INSERT",
+		"eventVersion": "1.1",
+		"eventSource": "aws:dynamodb",
+		"awsRegion": "us-west-2",
+		"dynamodb": {
+			"ApproximateCreationDateTime": 1556856713.0,
+			"Keys": {
+				"service_name": {
+					"S": "alexaforbusiness"
+				},
+				"last_updated_date": {
+					"S": "100100"
+				}
+			},
+			"NewImage": {
+				"service_name": {
+					"S": "alexaforbusiness"
+				},
+				"last_updated_date": {
+					"S": "100100"
+				}
+			},
+			"SequenceNumber": "5057200000000001486846102",
+			"SizeBytes": 102,
+			"StreamViewType": "NEW_AND_OLD_IMAGES"
+		},
+		"eventSourceARN": "arn:aws:dynamodb:us-west-2:902607243125:table/aws_sla_monitor/stream/2019-05-02T00:45:09.662"
+	}]
+}
