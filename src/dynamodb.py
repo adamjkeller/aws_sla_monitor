@@ -78,3 +78,13 @@ class DynamoDB(object):
                 },
             )
         )    
+
+    def delete_item(self, table_name, service_name, last_updated_date):
+        print(
+            self.dynamo_client.Table(table_name).delete_item(
+                Key={
+                    'service_name': service_name,
+                    'last_updated_date': str(last_updated_date)                    
+                }
+            )
+        )
