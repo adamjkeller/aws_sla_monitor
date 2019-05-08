@@ -23,6 +23,7 @@ setuptools.setup(
         "aws-cdk.aws_lambda", 
         "aws-cdk.aws_lambda_event_sources",
         "aws-cdk.aws_s3",
+        "aws-cdk.aws_s3_deployment",
         "aws-cdk.aws_events_targets"
     ],
 
