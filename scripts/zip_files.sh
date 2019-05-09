@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 
-cd src/package/
+pushd package/
 zip -r9 ../function.zip .
-zip -g function.zip aws_crawler.py dynamodb.py main.py
+popd
+pushd src/
+zip -g ../function.zip aws_crawler.py dynamodb.py main.py
+popd
 aws lambda update-function-code --function-name AWS_SLA_MONITOR --zip-file fileb://function.zip
 
