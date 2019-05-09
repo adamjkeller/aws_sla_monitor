@@ -3,16 +3,18 @@
 from boto3.dynamodb.conditions import Key, Attr
 import boto3
 
+# TODO: Cleanup dynamo table name parameter
 
 class DynamoDB(object):
 
-    def __init__(self, debug_mode, local_mode=False, endpoint='localhost:8000'):
+    def __init__(self, debug_mode, dynamo_table, local_mode=False, endpoint='localhost:8000'):
         self.debug_mode = debug_mode
         self.endpoint = endpoint 
         self.local_mode = local_mode
         self.dynamo_client = self.set_dynamo_client(endpoint=self.endpoint)
+        self.dynamo_table = dynamo_table
         self.dynamo_table_details = {
-            "Name": "aws_sla_monitor", 
+            "Name": dynamo_table, 
             "Attributes": {
                 "service_name": "HASH",
                 "last_updated_date": "RANGE"

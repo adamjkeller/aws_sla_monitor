@@ -34,6 +34,7 @@ class AWSSlaMonitor(cdk.Stack):
         _, zip_file = zip_package()
 
         #### IF WE WANT TO UPLOAD FILE TO S3 ON OUR OWN ###############
+        # Ideally, python code should prob live in it's own repo/deploy process
         #bucket_encryption = aws_s3.BucketEncryption.Kms
         #
         #s3_public_access = aws_s3.BlockPublicAccess(
@@ -70,7 +71,8 @@ class AWSSlaMonitor(cdk.Stack):
             runtime=aws_lambda.Runtime.PYTHON37,
             description="Monitors AWS SLA Pages and updates DynamoDB Table when SLAs update",
             environment={
-                "STACK_NAME": self.stack_name
+                "STACK_NAME": self.stack_name,
+                "LOCAL_MODE": "False",
             },
             #log_retention_days=aws_logs.RetentionDays.TwoWeeks,
             memory_size=128,
@@ -92,7 +94,10 @@ class AWSSlaMonitor(cdk.Stack):
             table_name="{}-aws-sla-monitor-cdk".format(self.stack_name),
             partition_key={"name": "service_name", "type": aws_dynamodb.AttributeType.String},
             sort_key={"name": "last_updated_date", "type": aws_dynamodb.AttributeType.String},
-            read_capacity=5,
-            write_capacity=5,
+            #read_capacity=5,
+            #write_capacity=5,
+            billing_mode=aws_dynamodb.BillingMode.PayPerRequest,
             stream_specification=aws_dynamodb.StreamViewType.NewImage
         )
+
+        dynamo_backend.grant_read_write_data(lambda_function.role)
