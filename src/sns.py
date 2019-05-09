@@ -51,13 +51,14 @@ class SNSUpdate(object):
 
     def sns_notification(self):
         service_list = self.prepare_date()
-        message = self.message(service_list)
-        self.client.publish(
-                TopicArn=self.topic_arn,
-                Message=str(message),
-                Subject="AWS SLA Update Notification"
-            )
-        self.clear_table(service_list)
+        if service_list:
+            message = self.message(service_list)
+            self.client.publish(
+                    TopicArn=self.topic_arn,
+                    Message=str(message),
+                    Subject="AWS SLA Update Notification"
+                )
+            self.clear_table(service_list)
 
 
 def lambda_handler(event, context):
