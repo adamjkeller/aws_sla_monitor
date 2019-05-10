@@ -1,15 +1,17 @@
 #!/usr/bin/env python3
 
 from time import strftime
+from os import getenv
 from dynamodb import DynamoDB
+
 
 class ReadDynamoStream(object):
     
-    def __init__(self, event_details, debug_mode=False, local_mode=False):
+    def __init__(self, event_details, table_name, debug_mode=False, local_mode=False):
         self.event_details = event_details
-        self.dynamo = DynamoDB(debug_mode=debug_mode, local_mode=local_mode)
+        self.dynamo = DynamoDB(debug_mode=debug_mode, local_mode=local_mode, dynamo_table=table_name)
         self.epoch_time = self.setup_epoch_time()
-        self.dynamo_table_name = "aws_sla_change_table"
+        self.dynamo_table_name = table_name
 
     def setup_epoch_time(self):
         # Adding thirty minutes to ensure automation has time to come in and process data prior to ttl expiry
@@ -35,4 +37,5 @@ class ReadDynamoStream(object):
 
     
 def lambda_handler(event, context):
-    ReadDynamoStream(event_details=event).main()
+    table_name = getenv("DYNAMO_TABLE_NAME")
+    ReadDynamoStream(event_details=event, table_name=table_name).main()

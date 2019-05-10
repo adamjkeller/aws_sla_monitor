@@ -2,7 +2,8 @@
 import os
 import sh
 from aws_cdk import (
-    aws_lambda, 
+    aws_lambda,
+    aws_lambda_event_sources, 
     aws_events,
     aws_events_targets,
     aws_s3,
@@ -13,10 +14,10 @@ from aws_cdk import (
 )
 
 
-class AWSSlaMonitor(cdk.Stack):
+class AWSSlaMonitor(cdk.Construct):
 
-    def __init__(self, app: cdk.App, id: str, **kwargs) -> None:
-        super().__init__(app, id, **kwargs)
+    def __init__(self, scope: cdk.Construct, id: str, stack_name: str) -> None:
+        super().__init__(scope, id)
 
         def zip_package():
             cwd = os.getcwd()
@@ -33,48 +34,42 @@ class AWSSlaMonitor(cdk.Stack):
 
         _, zip_file = zip_package()
 
-        #### IF WE WANT TO UPLOAD FILE TO S3 ON OUR OWN ###############
-        # Ideally, python code should prob live in it's own repo/deploy process
-        #bucket_encryption = aws_s3.BucketEncryption.Kms
-        #
-        #s3_public_access = aws_s3.BlockPublicAccess(
-        #    block_public_acls=True,
-        #    block_public_policy=True,
-        #)
-        #
-        #s3_bucket = aws_s3.Bucket(
-        #    self, "LambdaS3Bucket",
-        #    block_public_access=s3_public_access,
-        #    bucket_name="{}-aws-sla-monitor-cdk".format(self.stack_name),
-        #    encryption=bucket_encryption,
-        #    versioned=True
-        #)
-        #
-        #s3_bucket_deployment = aws_s3_deployment.BucketDeployment(
-        #    self, "LambdaCodeDeployment",
-        #    source=aws_s3_deployment.Source.asset(zip_file),
-        #    destination_bucket=s3_bucket,
-        #)
-        #
-        #lambda_code = aws_lambda.Code.bucket(
-        #    bucket=s3_bucket,
-        #    key=file_name,
-        #)
-        ################################################################
+        # TODO: Move to it's own construct at some point and make more dynamic
+        def dynamo_table_create(table_name, pay_per_request, stream_enabled):
 
-        lambda_function = aws_lambda.Function(
-            self, "LambdaFunction",
-            function_name="{}-aws-sla-monitor-cdk".format(self.stack_name),
+            if pay_per_request:
+                billing_mode = aws_dynamodb.BillingMode.PayPerRequest
+            else:
+                billing_mode = aws_dynamodb.BillingMode.PROVISIONED
+
+            if stream_enabled:
+                stream_spec = aws_dynamodb.StreamViewType.NewImage
+            else:
+                stream_spec = None
+
+            dynamo = aws_dynamodb.Table(
+                self, "DynamoTable{}".format(table_name),
+                table_name=stack_name + "-" + table_name,
+                billing_mode=billing_mode,
+                stream_specification=stream_spec,
+                partition_key={"name": "service_name", "type": aws_dynamodb.AttributeType.String},
+                sort_key={"name": "last_updated_date", "type": aws_dynamodb.AttributeType.String},
+            )
+
+            return dynamo
+
+        sla_monitor_lambda_function = aws_lambda.Function(
+            self, "SLAMonitorLambdaFunction",
+            function_name="{}-aws-sla-monitor-cdk".format(stack_name),
             code=aws_lambda.AssetCode(zip_file),
-            #code=lambda_code,
             handler="main.lambda_handler",
             runtime=aws_lambda.Runtime.PYTHON37,
             description="Monitors AWS SLA Pages and updates DynamoDB Table when SLAs update",
             environment={
-                "STACK_NAME": self.stack_name,
+                "STACK_NAME": stack_name,
                 "LOCAL_MODE": "False",
+                "DYNAMO_TABLE_NAME": stack_name + "-" + "aws-sla-monitor-cdk"
             },
-            #log_retention_days=aws_logs.RetentionDays.TwoWeeks,
             memory_size=128,
             timeout=90,
         )
@@ -85,19 +80,39 @@ class AWSSlaMonitor(cdk.Stack):
             enabled=True,
             schedule_expression='cron(0 22 */3 * ? *)',
             targets=[
-                aws_events_targets.LambdaFunction(handler=lambda_function)
+                aws_events_targets.LambdaFunction(handler=sla_monitor_lambda_function)
             ],
         )
 
-        dynamo_backend = aws_dynamodb.Table(
-            self, "DynamoTable",
-            table_name="{}-aws-sla-monitor-cdk".format(self.stack_name),
-            partition_key={"name": "service_name", "type": aws_dynamodb.AttributeType.String},
-            sort_key={"name": "last_updated_date", "type": aws_dynamodb.AttributeType.String},
-            #read_capacity=5,
-            #write_capacity=5,
-            billing_mode=aws_dynamodb.BillingMode.PayPerRequest,
-            stream_specification=aws_dynamodb.StreamViewType.NewImage
+        sla_stream_monitor_lambda_function = aws_lambda.Function(
+            self, "StreamMonitorLambdaFunction",
+            function_name="{}-aws-sla-stream-monitor-cdk".format(stack_name),
+            code=aws_lambda.AssetCode(zip_file),
+            handler="stream_processor.lambda_handler",
+            runtime=aws_lambda.Runtime.PYTHON37,
+            description="Monitors DynamoDB stream from SLA Monitor and updates a DynamoDB Table with any changes",
+            environment={
+                "STACK_NAME": stack_name,
+                "DYNAMO_TABLE_NAME": stack_name + "-" + "aws-sla-stream-monitor-cdk"
+            },
+            memory_size=128,
+            timeout=90,
         )
 
-        dynamo_backend.grant_read_write_data(lambda_function.role)
+        # Create DynamoDB Backends
+        sla_monitor_dynamo_backend = dynamo_table_create(table_name="aws-sla-monitor-cdk", stream_enabled=True, pay_per_request=True)
+        sla_stream_monitor_dynamo_backend = dynamo_table_create(table_name="aws-sla-stream-monitor-cdk", stream_enabled=False, pay_per_request=True)
+
+        # Permissions to access sla_monitor dynamo table
+        sla_monitor_dynamo_backend.grant_read_write_data(sla_monitor_lambda_function.role)
+        #sla_monitor_dynamo_backend.grant_read_data(sla_stream_monitor_lambda_function.role)
+
+        # Permissions to access stream_monitor dynamo table
+        sla_stream_monitor_dynamo_backend.grant_read_write_data(sla_stream_monitor_lambda_function.role)
+
+        # Event source for stream monitor lambda function from sla monitor dynamodb stream
+        sla_stream_monitor_lambda_function.add_event_source(
+            aws_lambda_event_sources.DynamoEventSource(
+                table=sla_monitor_dynamo_backend, starting_position=aws_lambda.StartingPosition.Latest
+            )
+        )

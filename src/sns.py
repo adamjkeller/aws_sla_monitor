@@ -29,35 +29,38 @@ class SNSUpdate(object):
         table_details = self.dynamo.scan_table(self.dynamo_table_name)
         service_list = list()
         return_list = list()
+        
         for service_desc in table_details['Items']:
             service_list.append(service_desc)
 
         # Removing duplicate entries. This can likely be cleaned up into a couple of python lambdas (anon function), very messy.
         for service_details in service_list:
             _serv_name = service_details['service_name']
-            repeated_list = [_serv_name for x in service_list if x['service_name'] == _serv_name]
+            repeated_list = [x for x in service_list if x['service_name'] == _serv_name]
             total_count = len(repeated_list)
-            if total_count > 1 and _serv_name not in [x['service_name'] for x in return_list]:
-                max_date = max([x['last_updated_date'] for x in service_list])
+            if total_count > 1 or _serv_name not in [x['service_name'] for x in return_list]:
+                max_date = max([x['last_updated_date'] for x in repeated_list])
                 _to_return = next(x for x in service_list if x['service_name'] == _serv_name and x['last_updated_date'] == max_date)
                 return_list.append(
                     _to_return
                 )
-        return return_list
+        return service_list, return_list
 
     def clear_table(self, service_list):
         for service_info in service_list:
             self.dynamo.delete_item(self.dynamo_table_name, service_info['service_name'], service_info['last_updated_date'])
 
     def sns_notification(self):
-        service_list = self.prepare_date()
-        if service_list:
-            message = self.message(service_list)
-            self.client.publish(
+        service_list, return_list = self.prepare_date()
+        if return_list:
+            message = self.message(return_list)
+            response = self.client.publish(
                     TopicArn=self.topic_arn,
                     Message=str(message),
                     Subject="AWS SLA Update Notification"
                 )
+            print("Message Published! {}".format(response))
+        if return_list or service_list:    
             self.clear_table(service_list)
 
 
