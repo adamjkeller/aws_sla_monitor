@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import boto3
+from os import getenv
 from time import strftime, localtime
 from dynamodb import DynamoDB
 
@@ -8,10 +9,10 @@ from dynamodb import DynamoDB
 
 class SNSUpdate(object):
     
-    def __init__(self, topic_arn="arn:aws:sns:us-west-2:902607243125:AWS_SLA_Notifier", endpoint='localhost:8000'):
+    def __init__(self, topic_arn, dynamo_table_name, endpoint='localhost:8000'):
         self.client = self.sns_client()
-        self.dynamo = DynamoDB(debug_mode=False, local_mode=False)
-        self.dynamo_table_name = "aws_sla_change_table"
+        self.dynamo = DynamoDB(debug_mode=False, local_mode=False, dynamo_table=dynamo_table_name)
+        self.dynamo_table_name = dynamo_table_name
         self.topic_arn = topic_arn
 
     def sns_client(self):
@@ -65,4 +66,6 @@ class SNSUpdate(object):
 
 
 def lambda_handler(event, context):
-    SNSUpdate().sns_notification()
+    sns_topic_arn = getenv("SNS_TOPIC_ARN")
+    dynamo_table_name = getenv("DYNAMO_TABLE_NAME")
+    SNSUpdate(topic_arn=sns_topic_arn, dynamo_table_name=dynamo_table_name).sns_notification()
