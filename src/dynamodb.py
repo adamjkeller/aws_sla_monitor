@@ -1,16 +1,18 @@
 #!/usr/bin/env python3
 
 from boto3.dynamodb.conditions import Key, Attr
+from os import getenv as env_var
 import boto3
 
 # TODO: Cleanup dynamo table name parameter
 
 class DynamoDB(object):
 
-    def __init__(self, debug_mode, dynamo_table, local_mode=False, endpoint='localhost:8000'):
+    def __init__(self, debug_mode, dynamo_table, local_mode=False, endpoint='localhost:8000', xray_enabled=False):
         self.debug_mode = debug_mode
         self.endpoint = endpoint 
         self.local_mode = local_mode
+        self.xray_enabled = xray_enabled
         self.dynamo_client = self.set_dynamo_client(endpoint=self.endpoint)
         self.dynamo_table = dynamo_table
         self.dynamo_table_details = {

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 from aws_cdk import cdk
-from cdk_testing.sla_monitor import AWSSLAMonitorStack
+from sla_monitor_cdk.sla_monitor import AWSSLAMonitorStack
 
 app = cdk.App()
 

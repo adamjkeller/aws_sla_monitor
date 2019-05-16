@@ -1,7 +1,0 @@
-README.md
-setup.py
-cdk_testing/cdk_testing.egg-info/PKG-INFO
-cdk_testing/cdk_testing.egg-info/SOURCES.txt
-cdk_testing/cdk_testing.egg-info/dependency_links.txt
-cdk_testing/cdk_testing.egg-info/requires.txt
-cdk_testing/cdk_testing.egg-info/top_level.txt

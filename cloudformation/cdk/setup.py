@@ -6,26 +6,31 @@ with open("README.md") as fp:
 
 
 setuptools.setup(
-    name="cdk_testing",
+    name="aws_sla_monitor",
     version="0.0.1",
 
-    description="An empty CDK Python app",
+    description="CDK App to deploy SLA Monitor Environment",
     long_description=long_description,
     long_description_content_type="text/markdown",
 
     author="author",
 
-    package_dir={"": "cdk_testing"},
-    packages=setuptools.find_packages(where="cdk_testing"),
+    package_dir={"main": "sla_monitor_sdk"},
+    packages=setuptools.find_packages(where="sla_monitor_cdk"),
 
     install_requires=[
         "aws-cdk.cdk",
-        "aws-cdk.aws_lambda", 
+        "aws-cdk.aws_lambda",
         "aws-cdk.aws_lambda_event_sources",
+        "aws-cdk.aws_events",
+        "aws-cdk.aws_events_targets",
         "aws-cdk.aws_s3",
         "aws-cdk.aws_s3_deployment",
+        "aws-cdk.aws_logs",
         "aws-cdk.aws_dynamodb",
-        "aws-cdk.aws_events_targets"
+        "aws-cdk.aws_sns",
+        "sh",
+        "requests"
     ],
 
     python_requires=">=3.6",

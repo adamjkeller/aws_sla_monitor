@@ -65,6 +65,7 @@ class AWSSlaMonitor(cdk.Construct):
             code=aws_lambda.AssetCode(zip_file),
             handler="main.lambda_handler",
             runtime=aws_lambda.Runtime.PYTHON37,
+            tracing=aws_lambda.Tracing.Active,
             description="Monitors AWS SLA Pages and updates DynamoDB Table when SLAs update",
             environment={
                 "STACK_NAME": stack_name,
@@ -124,7 +125,8 @@ class AWSSlaMonitor(cdk.Construct):
             self, "LambdaCWEventRuleSLANotifier",
             description="Scheduled event to trigger AWS SLA monitor",
             enabled=True,
-            schedule_expression='cron(10 22 */3 * ? *)',
+            #schedule_expression='cron(10 22 */3 * ? *)',
+            schedule_expression='cron(*/6 * * * ? *)',            
             targets=[
                 aws_events_targets.LambdaFunction(handler=sla_notifier_lambda_function)
             ],
@@ -134,7 +136,8 @@ class AWSSlaMonitor(cdk.Construct):
             self, "LambdaCWEventRuleSLAMonitor",
             description="Scheduled event to trigger AWS SLA monitor",
             enabled=True,
-            schedule_expression='cron(0 22 */3 * ? *)',
+            #schedule_expression='cron(0 22 */3 * ? *)',
+            schedule_expression='cron(*/8 * * * ? *)',            
             targets=[
                 aws_events_targets.LambdaFunction(handler=sla_monitor_lambda_function)
             ],
