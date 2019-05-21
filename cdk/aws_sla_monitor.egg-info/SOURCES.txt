@@ -1,7 +1,0 @@
-README.md
-setup.py
-aws_sla_monitor.egg-info/PKG-INFO
-aws_sla_monitor.egg-info/SOURCES.txt
-aws_sla_monitor.egg-info/dependency_links.txt
-aws_sla_monitor.egg-info/requires.txt
-aws_sla_monitor.egg-info/top_level.txt

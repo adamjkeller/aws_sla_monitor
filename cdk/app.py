@@ -250,6 +250,6 @@ class MainApp(cdk.App):
 
 
 if __name__ == '__main__':
-    _stack_name = os.getenv('STACK_NAME')
+    _stack_name = os.getenv('STACK_NAME') or 'testing'
     app = MainApp(_stack_name=_stack_name)
     app.run()
