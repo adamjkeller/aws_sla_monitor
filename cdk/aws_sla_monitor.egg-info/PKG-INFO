@@ -1,7 +1,7 @@
 Metadata-Version: 2.1
 Name: aws-sla-monitor
 Version: 0.0.1
-Summary: An empty CDK Python app
+Summary: CDK App to deploy SLA Monitor Environment
 Home-page: UNKNOWN
 Author: author
 License: UNKNOWN

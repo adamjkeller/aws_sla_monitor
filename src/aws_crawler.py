@@ -4,6 +4,7 @@ from bs4 import BeautifulSoup
 from requests import get
 from dynamodb import DynamoDB
 import re
+import traceback
 
 # TODO: A lot of try/catch logic is missing here
 
@@ -107,7 +108,8 @@ class AwsSlaCrawler(object):
                     self.dynamo.update_data_set(service_name, epoch)
 
             except Exception as e:
-                print("ERROR: MOVING ON, PLEASE REVIEW ERROR. {}".format(e))
+                print("ERROR: MOVING ON, PLEASE REVIEW. {}".format(e))
+                print(traceback.print_exc())
                 pass
 
 
