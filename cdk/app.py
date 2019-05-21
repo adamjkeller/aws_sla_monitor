@@ -56,6 +56,7 @@ class SLAMonitor(cdk.Stack):
             os.chdir('../package/')
             sh.zip('-r9', zip_file, '.')
             os.chdir('../src/')
+            sh.zip('-gr', zip_file, 'main.py')
             sh.zip('-gr', zip_file, 'aws_crawler.py')
             sh.zip('-gr', zip_file, 'dynamodb.py')
             os.chdir(cwd)
@@ -222,6 +223,9 @@ class SLAChangeNotifier(cdk.Stack):
 
         # Permissions to access stream_monitor dynamo table
         self.sla_stream_monitor_dynamo_table.grant_read_write_data(self.sla_notifier_lambda_function.role)
+
+        # Grant publish access from Lambda function to SNS topic
+        self.sns_topic.grant_publish(self.sla_notifier_lambda_function)
 
 
 class MainApp(cdk.App):
