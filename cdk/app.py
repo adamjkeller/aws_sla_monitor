@@ -15,7 +15,6 @@ from aws_cdk import (
 )
 
 # TODO: Fix all code packaging, right now duplicated and zipping all the things.
-
 class BaseModule(cdk.Stack):
 
     def __init__(self, scope: cdk.Stack, id: str, stack_name_str, **kwargs):
@@ -23,25 +22,13 @@ class BaseModule(cdk.Stack):
         self.stack_name_str = stack_name_str
 
         # TODO: Figure out why lambda layers when updated can't apply to existing lambdas. It appears that a new one is created and the previous is removed which causes dependency failures.
-        #def zip_package():
-        #    cwd = os.getcwd()
-        #    file_name = 'dynamo-layer.zip'
-        #    zip_file = cwd + '/' + file_name
-
-        #    os.chdir('../src/')
-        #    sh.zip('-r9', zip_file, 'dynamodb.py')
-        #    os.chdir(cwd)
-
-        #    return file_name, zip_file
-
-        #_, zip_file = zip_package()
-
         #self.dynamodb_lambda_layer = aws_lambda.LayerVersion(
         #    self, "DynamoDBHelperLambdaLayer-{}".format(self.stack_name_str),
         #    code = aws_lambda.AssetCode(zip_file),
         #    compatible_runtimes = [aws_lambda.Runtime.PYTHON37],
         #    description = "DynamoDB Shared Library"
         #)
+
 
 class SLAMonitor(cdk.Stack):
 
@@ -95,7 +82,7 @@ class SLAMonitor(cdk.Stack):
         # Permissions to access sla_monitor dynamo table
         self.sla_monitor_dynamo_table.grant_read_write_data(self.sla_monitor_lambda_function.role)
 
-        self.sla_monitor_cw_event_rule = aws_events.EventRule(
+        self.sla_monitor_cw_event_rule = aws_events.Rule(
             self, "LambdaCWEventRuleSLAMonitor",
             description="Scheduled event to trigger AWS SLA monitor",
             enabled=True,
@@ -105,6 +92,7 @@ class SLAMonitor(cdk.Stack):
                 aws_events_targets.LambdaFunction(handler=self.sla_monitor_lambda_function)
             ],
         )
+
 
 class StreamMonitor(cdk.Stack):
 
@@ -160,6 +148,7 @@ class StreamMonitor(cdk.Stack):
             )
         )
 
+
 class SLAChangeNotifier(cdk.Stack):
 
     def __init__(self, scope: cdk.Stack, id: str, sla_stream_monitor_dynamo_table, **kwargs):
@@ -187,7 +176,7 @@ class SLAChangeNotifier(cdk.Stack):
 
         self.subscribe_to_topic = aws_sns.Subscription(
             self, "TopicSubscribe",
-            endpoint='keladam@amazon.com',
+            endpoint=os.getenv("EMAIL_NOTIFICATION"),
             protocol=aws_sns.SubscriptionProtocol.Email,
             topic=self.sns_topic
         )
@@ -210,7 +199,7 @@ class SLAChangeNotifier(cdk.Stack):
         )
 
         # TODO: Make into reusable function
-        self.notifier_cw_event_rule = aws_events.EventRule(
+        self.notifier_cw_event_rule = aws_events.Rule(
             self, "LambdaCWEventRuleSLANotifier",
             description="Scheduled event to trigger AWS SLA monitor",
             enabled=True,
