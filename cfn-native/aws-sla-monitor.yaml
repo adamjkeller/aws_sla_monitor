@@ -1,0 +1,410 @@
+Parameters:
+  SLAMonitorLambdaFunctionCodeS3Bucket:
+    Type: String
+    Description: S3 bucket for SLAMonitor Lambda code
+    # Default: sla-monitor-testing1
+
+  SLAMonitorLambdaFunctionCodeS3Key:
+    Type: String
+    Description: S3 key for SLAMonitorLambdaFunction Code
+    Default: slamonitor-lambda-code.zip
+
+Resources:
+  SLAMonitorSLAMonitorLambdaFunctionServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service:
+                Fn::Join:
+                  - ""
+                  - - lambda.
+                    - Ref: AWS::URLSuffix
+        Version: "2012-10-17"
+      ManagedPolicyArns:
+        - Fn::Join:
+            - ""
+            - - "arn:"
+              - Ref: AWS::Partition
+              - :iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+  SLAMonitorSLAMonitorLambdaFunctionServiceRoleDefaultPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyDocument:
+        Statement:
+          - Action:
+              - dynamodb:BatchGetItem
+              - dynamodb:GetRecords
+              - dynamodb:GetShardIterator
+              - dynamodb:Query
+              - dynamodb:GetItem
+              - dynamodb:Scan
+              - dynamodb:BatchWriteItem
+              - dynamodb:PutItem
+              - dynamodb:UpdateItem
+              - dynamodb:DeleteItem
+            Effect: Allow
+            Resource:
+              - Fn::GetAtt:
+                  - SLAMonitorDynamoTableawsslamonitor
+                  - Arn
+              - Ref: AWS::NoValue
+        Version: "2012-10-17"
+      PolicyName: 
+        Fn::Join:
+          - ""
+          - - Ref: AWS::StackName
+            - -SLAMonitorSLAMonitorLambdaFunctionServiceRoleDefaultPolicy
+      Roles:
+        - Ref: SLAMonitorSLAMonitorLambdaFunctionServiceRole
+
+  SLAMonitorSLAMonitorLambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        S3Bucket:
+          Ref: SLAMonitorLambdaFunctionCodeS3Bucket
+        S3Key:
+          Ref: SLAMonitorLambdaFunctionCodeS3Key
+      Handler: main.lambda_handler
+      Role:
+        Fn::GetAtt:
+          - SLAMonitorSLAMonitorLambdaFunctionServiceRole
+          - Arn
+      Runtime: python3.7
+      Description: Monitors AWS SLA Pages and updates DynamoDB Table when SLAs update
+      Environment:
+        Variables:
+          STACK_NAME:
+            Ref: AWS::StackName
+          LOCAL_MODE: "False"
+          DYNAMO_TABLE_NAME: #fix
+            Fn::Join:
+              - ""
+              - - Ref: AWS::StackName
+                - -aws-sla-monitor
+      FunctionName:
+        Fn::Join:
+          - ""
+          - - Ref: AWS::StackName
+            - -aws-sla-monitor
+      MemorySize: 128
+      Timeout: 90
+    DependsOn:
+      - SLAMonitorSLAMonitorLambdaFunctionServiceRoleDefaultPolicy
+      - SLAMonitorSLAMonitorLambdaFunctionServiceRole
+
+  SLAMonitorSLAMonitorLambdaPermissionCWEventRule:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName:
+        Fn::GetAtt:
+          - SLAMonitorSLAMonitorLambdaFunction
+          - Arn
+      Principal: events.amazonaws.com
+      SourceArn:
+        Fn::GetAtt:
+          - SLAMonitorLambdaCWEventRuleSLAMonitor
+          - Arn
+
+  SLAMonitorStreamMonitorLambdaFunctionServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service:
+                Fn::Join:
+                  - ""
+                  - - lambda.
+                    - Ref: AWS::URLSuffix
+        Version: "2012-10-17"
+      ManagedPolicyArns:
+        - Fn::Join:
+            - ""
+            - - "arn:"
+              - Ref: AWS::Partition
+              - :iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+  SLAMonitorStreamMonitorLambdaFunctionServiceRoleDefaultPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyDocument:
+        Statement:
+          - Action:
+              - dynamodb:BatchGetItem
+              - dynamodb:GetRecords
+              - dynamodb:GetShardIterator
+              - dynamodb:Query
+              - dynamodb:GetItem
+              - dynamodb:Scan
+              - dynamodb:BatchWriteItem
+              - dynamodb:PutItem
+              - dynamodb:UpdateItem
+              - dynamodb:DeleteItem
+            Effect: Allow
+            Resource:
+              - Fn::GetAtt:
+                  - SLAMonitorDynamoTableawsslastreammonitor
+                  - Arn
+              - Ref: AWS::NoValue
+          - Action:
+              - dynamodb:DescribeStream
+              - dynamodb:GetRecords
+              - dynamodb:GetShardIterator
+            Effect: Allow
+            Resource:
+              Fn::GetAtt:
+                - SLAMonitorDynamoTableawsslamonitor
+                - StreamArn
+          - Action: dynamodb:ListStreams
+            Effect: Allow
+            Resource: "*"
+        Version: "2012-10-17"
+      PolicyName: SLAMonitorStreamMonitorLambdaFunctionServiceRoleDefaultPolicy
+      Roles:
+        - Ref: SLAMonitorStreamMonitorLambdaFunctionServiceRole
+
+  SLAMonitorStreamMonitorLambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        S3Bucket:
+          Ref: SLAMonitorLambdaFunctionCodeS3Bucket
+        S3Key:
+          Ref: SLAMonitorLambdaFunctionCodeS3Key
+      Handler: stream_processor.lambda_handler
+      Role:
+        Fn::GetAtt:
+          - SLAMonitorStreamMonitorLambdaFunctionServiceRole
+          - Arn
+      Runtime: python3.7
+      Description: Monitors DynamoDB stream from SLA Monitor and updates a DynamoDB Table
+        with any changes
+      Environment:
+        Variables:
+          STACK_NAME:
+            Ref: AWS::StackName
+          DYNAMO_TABLE_NAME:
+            Fn::Join:
+              - ""
+              - - Ref: AWS::StackName
+                - -aws-sla-stream-monitor
+      FunctionName:
+        Fn::Join:
+          - ""
+          - - Ref: AWS::StackName
+            - -aws-sla-stream-monitor
+      MemorySize: 128
+      Timeout: 90
+    DependsOn:
+      - SLAMonitorStreamMonitorLambdaFunctionServiceRoleDefaultPolicy
+      - SLAMonitorStreamMonitorLambdaFunctionServiceRole
+
+  SLAMonitorStreamMonitorLambdaFunctionDynamoDBEventSourceSLAMonitorDynamoTableawsslamonitor:
+    Type: AWS::Lambda::EventSourceMapping
+    Properties:
+      EventSourceArn:
+        Fn::GetAtt:
+          - SLAMonitorDynamoTableawsslamonitor
+          - StreamArn
+      FunctionName:
+        Ref: SLAMonitorStreamMonitorLambdaFunction
+      BatchSize: 100
+      StartingPosition: LATEST
+
+  SLAMonitorSNSTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      DisplayName: SLA Notification Topic
+      TopicName:
+        Fn::Join:
+          - ""
+          - - Ref: AWS::StackName
+            - -aws-sla-monitor-notification
+
+  SLAMonitorTopicSubscribe:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Protocol: email
+      TopicArn:
+        Ref: SLAMonitorSNSTopic
+      Endpoint: joeta@amazon.com #fix, temporary
+
+  SLAMonitorSLANotifierLambdaFunctionServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service:
+                Fn::Join:
+                  - ""
+                  - - lambda.
+                    - Ref: AWS::URLSuffix
+        Version: "2012-10-17"
+      ManagedPolicyArns:
+        - Fn::Join:
+            - ""
+            - - "arn:"
+              - Ref: AWS::Partition
+              - :iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+  SLAMonitorSLANotifierLambdaFunctionServiceRoleDefaultPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyDocument:
+        Statement:
+          - Action:
+              - dynamodb:BatchGetItem
+              - dynamodb:GetRecords
+              - dynamodb:GetShardIterator
+              - dynamodb:Query
+              - dynamodb:GetItem
+              - dynamodb:Scan
+              - dynamodb:BatchWriteItem
+              - dynamodb:PutItem
+              - dynamodb:UpdateItem
+              - dynamodb:DeleteItem
+            Effect: Allow
+            Resource:
+              - Fn::GetAtt:
+                  - SLAMonitorDynamoTableawsslastreammonitor
+                  - Arn
+              - Ref: AWS::NoValue
+          - Action: sns:Publish
+            Effect: Allow
+            Resource:
+              Ref: SLAMonitorSNSTopic
+        Version: "2012-10-17"
+      PolicyName: SLAMonitorSLANotifierLambdaFunctionServiceRoleDefaultPolicy
+      Roles:
+        - Ref: SLAMonitorSLANotifierLambdaFunctionServiceRole
+
+  SLAMonitorSLANotifierLambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        S3Bucket:
+          Ref: SLAMonitorLambdaFunctionCodeS3Bucket
+        S3Key:
+          Ref: SLAMonitorLambdaFunctionCodeS3Key
+      Handler: sns.lambda_handler
+      Role:
+        Fn::GetAtt:
+          - SLAMonitorSLANotifierLambdaFunctionServiceRole
+          - Arn
+      Runtime: python3.7
+      Description: Notifies SNS Topic if SLAs change
+      Environment:
+        Variables:
+          STACK_NAME:
+            Ref: AWS::StackName
+          SNS_TOPIC_ARN:
+            Ref: SLAMonitorSNSTopic
+          DYNAMO_TABLE_NAME:
+            Fn::Join:
+              - ""
+              - - Ref: AWS::StackName
+                - -aws-sla-stream-monitor
+      FunctionName:
+        Fn::Join:
+          - ""
+          - - Ref: AWS::StackName
+            - -aws-sla-notifier
+      MemorySize: 128
+      Timeout: 90
+    DependsOn:
+      - SLAMonitorSLANotifierLambdaFunctionServiceRoleDefaultPolicy
+      - SLAMonitorSLANotifierLambdaFunctionServiceRole
+
+  SLAMonitorSLANotifierLambdaFunctionAllowEventRulekeladamSLAMonitorLambdaCWEventRuleSLANotifier:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName:
+        Fn::GetAtt:
+          - SLAMonitorSLANotifierLambdaFunction
+          - Arn
+      Principal: events.amazonaws.com
+      SourceArn:
+        Fn::GetAtt:
+          - SLAMonitorLambdaCWEventRuleSLANotifier
+          - Arn
+
+  SLAMonitorLambdaCWEventRuleSLANotifier:
+    Type: AWS::Events::Rule
+    Properties:
+      Description: Scheduled event to trigger AWS SLA monitor
+      ScheduleExpression: cron(10 22 */3 * ? *)
+      State: ENABLED
+      Targets:
+        - Arn:
+            Fn::GetAtt:
+              - SLAMonitorSLANotifierLambdaFunction
+              - Arn
+          Id: SLANotifierLambdaFunction
+
+  SLAMonitorLambdaCWEventRuleSLAMonitor:
+    Type: AWS::Events::Rule
+    Properties:
+      Description: Scheduled event to trigger AWS SLA monitor
+      ScheduleExpression: cron(0 22 */3 * ? *)
+      State: ENABLED
+      Targets:
+        - Arn:
+            Fn::GetAtt:
+              - SLAMonitorSLAMonitorLambdaFunction
+              - Arn
+          Id: SLAMonitorLambdaFunction
+
+  SLAMonitorDynamoTableawsslamonitor:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      KeySchema:
+        - AttributeName: service_name
+          KeyType: HASH
+        - AttributeName: last_updated_date
+          KeyType: RANGE
+      AttributeDefinitions:
+        - AttributeName: service_name
+          AttributeType: S
+        - AttributeName: last_updated_date
+          AttributeType: S
+      BillingMode: PAY_PER_REQUEST
+      StreamSpecification:
+        StreamViewType: NEW_IMAGE
+      TableName:
+        Fn::Join:
+          - ""
+          - - Ref: AWS::StackName
+            - -aws-sla-monitor
+
+  SLAMonitorDynamoTableawsslastreammonitor:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      KeySchema:
+        - AttributeName: service_name
+          KeyType: HASH
+        - AttributeName: last_updated_date
+          KeyType: RANGE
+      AttributeDefinitions:
+        - AttributeName: service_name
+          AttributeType: S
+        - AttributeName: last_updated_date
+          AttributeType: S
+      BillingMode: PAY_PER_REQUEST
+      TableName:
+        Fn::Join:
+          - ""
+          - - Ref: AWS::StackName
+            - -aws-sla-stream-monitor

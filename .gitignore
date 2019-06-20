@@ -8,3 +8,4 @@
 *.tox
 *env
 *egg
+cfn-native/v-env
