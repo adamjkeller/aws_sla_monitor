@@ -9,6 +9,10 @@ Parameters:
     Description: S3 key for SLAMonitorLambdaFunction Code
     Default: slamonitor-lambda-code.zip
 
+  SLAMonitorAlertEmailAddress:
+    Type: String
+    Description: Email address for SLA change alerts
+
 Resources:
   SLAMonitorSLAMonitorLambdaFunctionServiceRole:
     Type: AWS::IAM::Role
@@ -82,7 +86,7 @@ Resources:
           STACK_NAME:
             Ref: AWS::StackName
           LOCAL_MODE: "False"
-          DYNAMO_TABLE_NAME: #fix
+          DYNAMO_TABLE_NAME:
             Fn::Join:
               - ""
               - - Ref: AWS::StackName
@@ -236,7 +240,7 @@ Resources:
       Protocol: email
       TopicArn:
         Ref: SLAMonitorSNSTopic
-      Endpoint: joeta@amazon.com #fix, temporary
+      Endpoint: !Ref SLAMonitorAlertEmailAddress
 
   SLAMonitorSLANotifierLambdaFunctionServiceRole:
     Type: AWS::IAM::Role
