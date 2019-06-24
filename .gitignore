@@ -6,6 +6,6 @@
 *package/
 *.zip
 *.tox
-*env
+*venv
+*.env
 *egg*
-cfn-native/v-env
