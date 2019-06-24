@@ -12,7 +12,7 @@ class PackageCode(object):
         self.to_package = {
             'sla-monitor.zip': [{'file': 'main.py'}, {'file': 'aws_crawler.py'}, {'file': 'dynamodb.py'}, {'dir': 'package/'}],
             'stream-monitor.zip': [{'file': 'dynamodb.py'}, {'file': 'stream_processor.py'}],
-            'change-notifier.zip': [{'file': 'sns.py'}],
+            'change-notifier.zip': [{'file': 'sns.py'},{'file': 'dynamodb.py'}],
         }
 
     def prepare_path(self, file_name):

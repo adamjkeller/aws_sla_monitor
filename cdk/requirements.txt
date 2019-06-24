@@ -1,1 +1,12 @@
--e .
+aws-cdk.cdk==0.33.0
+aws-cdk.aws_lambda==0.33.0
+aws-cdk.aws_lambda_event_sources==0.33.0
+aws-cdk.aws_events==0.33.0
+aws-cdk.aws_events_targets==0.33.0
+aws-cdk.aws_s3==0.33.0
+aws-cdk.aws_s3_deployment==0.33.0
+aws-cdk.aws_logs==0.33.0
+aws-cdk.aws_dynamodb==0.33.0
+aws-cdk.aws_sns==0.33.0
+sh==1.12.14
+requests==2.21.0

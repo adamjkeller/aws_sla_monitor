@@ -1,5 +1,11 @@
 #!/usr/bin/env bash
 
+if [[ $1 == 'package' ]];then
+  pushd ../
+  ./package_code.py $2
+  popd
+fi
+
 source ./env_vars.sh
 
 docker run -v $(pwd):/cdk \
@@ -10,4 +16,4 @@ docker run -v $(pwd):/cdk \
 -e STACK_NAME=$STACK_NAME \
 -e EMAIL_NOTIFICATION=$EMAIL_NOTIFICATION \
 -e GIT_HASH=$GIT_HASH \
--it adam9098/aws-cdk:v0.33.0 diff
+-it adam9098/aws-cdk:$CDK_VERSION deploy

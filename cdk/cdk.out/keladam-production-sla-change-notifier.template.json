@@ -193,7 +193,7 @@
       ],
       "Metadata": {
         "aws:cdk:path": "keladam-production-sla-change-notifier/SLANotifierLambdaFunction/Resource",
-        "aws:asset:path": "asset.bdb0b115f3b0e3345de2310ca7606ddb5d3c242bfd0c62f5530349ad46249611.zip",
+        "aws:asset:path": "asset.b3c0cf13973c4988c6605b669a84416a9f17aea5dfcda41012218b71b6da9a5c.zip",
         "aws:asset:property": "Code"
       }
     },
