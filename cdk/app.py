@@ -32,9 +32,9 @@ class BaseModule(cdk.Stack):
 
 class SLAMonitor(cdk.Stack):
 
-    def __init__(self, scope: cdk.Stack, id: str, sla_zip='sla-monitor.zip', **kwargs):
+    def __init__(self, scope: cdk.Stack, id: str, git_hash, sla_zip='sla-monitor.zip', **kwargs):
         super().__init__(scope, id, **kwargs)
-        self.sla_zip = sla_zip
+        self.sla_zip = git_hash + "-" + sla_zip
 
         self.sla_monitor_dynamo_table = aws_dynamodb.Table(
             self, "DynamoTable{}".format("SLAMonitor"),
@@ -48,7 +48,7 @@ class SLAMonitor(cdk.Stack):
         self.sla_monitor_lambda_function = aws_lambda.Function(
             self, "SLAMonitorLambdaFunction",
             function_name=self.stack_name,
-            code=aws_lambda.AssetCode(self.zip_file),
+            code=aws_lambda.AssetCode(self.sla_zip),
             handler="main.lambda_handler",
             runtime=aws_lambda.Runtime.PYTHON37,
             tracing=aws_lambda.Tracing.Active,
@@ -80,10 +80,10 @@ class SLAMonitor(cdk.Stack):
 
 class StreamMonitor(cdk.Stack):
 
-    def __init__(self, scope: cdk.Stack, id: str, sla_monitor_dynamo_table, stream_zip='stream-monitor.zip', **kwargs):
+    def __init__(self, scope: cdk.Stack, id: str, sla_monitor_dynamo_table, git_hash, stream_zip='stream-monitor.zip', **kwargs):
         super().__init__(scope, id, **kwargs)
         self.sla_monitor_dynamo_table = sla_monitor_dynamo_table
-        self.stream_zip = stream_zip
+        self.stream_zip = git_hash + "-" + stream_zip
 
         self.sla_stream_monitor_lambda_function = aws_lambda.Function(
             self, "StreamMonitorLambdaFunction",
@@ -122,10 +122,10 @@ class StreamMonitor(cdk.Stack):
 
 class SLAChangeNotifier(cdk.Stack):
 
-    def __init__(self, scope: cdk.Stack, id: str, sla_stream_monitor_dynamo_table, notifier_zip='change-notifier.zip', **kwargs):
+    def __init__(self, scope: cdk.Stack, id: str, sla_stream_monitor_dynamo_table, git_hash, notifier_zip='change-notifier.zip', **kwargs):
         super().__init__(scope, id, **kwargs)
         self.sla_stream_monitor_dynamo_table = sla_stream_monitor_dynamo_table
-        self.notifier_zip = notifier_zip
+        self.notifier_zip = git_hash + "-" + notifier_zip
 
         self.sns_topic = aws_sns.Topic(
             self, "SNSTopic",
@@ -178,26 +178,30 @@ class SLAChangeNotifier(cdk.Stack):
 
 class MainApp(cdk.App):
 
-    def __init__(self, _stack_name, **kwargs):
+    def __init__(self, _stack_name, _git_hash, **kwargs):
         super().__init__(**kwargs)
         self._stack_name = _stack_name
+        self._git_hash = _git_hash
 
         self.base_stack = BaseModule(self, _stack_name + "-sla-monitor-base", stack_name_str=_stack_name + "-sla-monitor-base")
 
-        self.sla_monitor = SLAMonitor(self, _stack_name + "-sla-monitor")
+        self.sla_monitor = SLAMonitor(self, _stack_name + "-sla-monitor", git_hash=_git_hash)
 
         self.stream_monitor = StreamMonitor(
             self, _stack_name + "-sla-stream-monitor", 
-            sla_monitor_dynamo_table=self.sla_monitor.sla_monitor_dynamo_table
+            sla_monitor_dynamo_table=self.sla_monitor.sla_monitor_dynamo_table, 
+            git_hash=_git_hash
         )
 
         self.change_notifier = SLAChangeNotifier(
             self, _stack_name + "-sla-change-notifier", 
-            sla_stream_monitor_dynamo_table=self.stream_monitor.sla_stream_monitor_dynamo_table
+            sla_stream_monitor_dynamo_table=self.stream_monitor.sla_stream_monitor_dynamo_table,
+            git_hash=_git_hash
         )
 
 
 if __name__ == '__main__':
     _stack_name = os.getenv('STACK_NAME') or 'testing'
-    app = MainApp(_stack_name=_stack_name)
+    _git_sha = os.getenv("GIT_HASH") or sh.git("rev-parse", "--short=7", "HEAD").strip()
+    app = MainApp(_stack_name=_stack_name, _git_hash=_git_sha)
     app.run()

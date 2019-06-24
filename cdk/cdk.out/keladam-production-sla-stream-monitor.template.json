@@ -177,7 +177,7 @@
       ],
       "Metadata": {
         "aws:cdk:path": "keladam-production-sla-stream-monitor/StreamMonitorLambdaFunction/Resource",
-        "aws:asset:path": "asset.62c22e6e075375bf6e88c64412eea45f5825e4bebb43215fd46b82eedbd071af.zip",
+        "aws:asset:path": "asset.08e4d8225ed45fac66bad1f82842f28ac7be33eebbaf1d025a0698c667b2a2bc.zip",
         "aws:asset:property": "Code"
       }
     },

@@ -208,7 +208,7 @@
       ],
       "Metadata": {
         "aws:cdk:path": "keladam-production-sla-monitor/SLAMonitorLambdaFunction/Resource",
-        "aws:asset:path": "asset.67a45e164f613fde7e529d5a5e75cbe8347c63c1ff9f7f378421d8590741e30e.zip",
+        "aws:asset:path": "asset.6896bbdac12b3f5185147f9a8656ad1095e717d407ea2c116a706104ba34c9e5.zip",
         "aws:asset:property": "Code"
       }
     },
