@@ -11,8 +11,9 @@ pip install -r ../requirements.txt
 deactivate
 
 # Package and compress python dependencies and lambda code
-cd venv/lib/python3*/site-packages/
-zip -r9 ../../../../slamonitor-lambda-code.zip .
-cd ../../../../
+cwd=$(pwd)
+pushd venv/lib/python3*/site-packages/
+zip -r9 $cwd/slamonitor-lambda-code.zip .
+popd
 zip -g -j slamonitor-lambda-code.zip ../src/*
 
