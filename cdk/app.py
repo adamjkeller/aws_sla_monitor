@@ -32,25 +32,9 @@ class BaseModule(cdk.Stack):
 
 class SLAMonitor(cdk.Stack):
 
-    def __init__(self, scope: cdk.Stack, id: str, **kwargs):
+    def __init__(self, scope: cdk.Stack, id: str, sla_zip='sla-monitor.zip', **kwargs):
         super().__init__(scope, id, **kwargs)
-
-        def zip_package():
-            cwd = os.getcwd()
-            file_name = 'aws-sla-monitor-cdk.zip'
-            zip_file = cwd + '/' + file_name
-
-            os.chdir('../package/')
-            sh.zip('-r9', zip_file, '.')
-            os.chdir('../src/')
-            sh.zip('-gr', zip_file, 'main.py')
-            sh.zip('-gr', zip_file, 'aws_crawler.py')
-            sh.zip('-gr', zip_file, 'dynamodb.py')
-            os.chdir(cwd)
-
-            return file_name, zip_file
-
-        _, zip_file = zip_package()
+        self.sla_zip = sla_zip
 
         self.sla_monitor_dynamo_table = aws_dynamodb.Table(
             self, "DynamoTable{}".format("SLAMonitor"),
@@ -64,7 +48,7 @@ class SLAMonitor(cdk.Stack):
         self.sla_monitor_lambda_function = aws_lambda.Function(
             self, "SLAMonitorLambdaFunction",
             function_name=self.stack_name,
-            code=aws_lambda.AssetCode(zip_file),
+            code=aws_lambda.AssetCode(self.zip_file),
             handler="main.lambda_handler",
             runtime=aws_lambda.Runtime.PYTHON37,
             tracing=aws_lambda.Tracing.Active,
@@ -96,28 +80,15 @@ class SLAMonitor(cdk.Stack):
 
 class StreamMonitor(cdk.Stack):
 
-    def __init__(self, scope: cdk.Stack, id: str, sla_monitor_dynamo_table, **kwargs):
+    def __init__(self, scope: cdk.Stack, id: str, sla_monitor_dynamo_table, stream_zip='stream-monitor.zip', **kwargs):
         super().__init__(scope, id, **kwargs)
         self.sla_monitor_dynamo_table = sla_monitor_dynamo_table
-
-        def zip_package():
-            cwd = os.getcwd()
-            file_name = 'aws-sla-stream-monitor-cdk.zip'
-            zip_file = cwd + '/' + file_name
-
-            os.chdir('../src/')
-            sh.zip('-r9', zip_file, 'stream_processor.py')
-            sh.zip('-gr', zip_file, 'dynamodb.py')
-            os.chdir(cwd)
-
-            return file_name, zip_file
-
-        _, zip_file = zip_package()
+        self.stream_zip = stream_zip
 
         self.sla_stream_monitor_lambda_function = aws_lambda.Function(
             self, "StreamMonitorLambdaFunction",
             function_name=self.stack_name,
-            code=aws_lambda.AssetCode(zip_file),
+            code=aws_lambda.AssetCode(self.stream_zip),
             handler="stream_processor.lambda_handler",
             runtime=aws_lambda.Runtime.PYTHON37,
             #layers=[self.dynamodb_lambda_layer],
@@ -151,22 +122,10 @@ class StreamMonitor(cdk.Stack):
 
 class SLAChangeNotifier(cdk.Stack):
 
-    def __init__(self, scope: cdk.Stack, id: str, sla_stream_monitor_dynamo_table, **kwargs):
+    def __init__(self, scope: cdk.Stack, id: str, sla_stream_monitor_dynamo_table, notifier_zip='change-notifier.zip', **kwargs):
         super().__init__(scope, id, **kwargs)
         self.sla_stream_monitor_dynamo_table = sla_stream_monitor_dynamo_table
-
-        def zip_package():
-            cwd = os.getcwd()
-            file_name = 'aws-sla-monitor-cdk.zip'
-            zip_file = cwd + '/' + file_name
-
-            os.chdir('../src/')
-            sh.zip('-r9', zip_file, 'sns.py')
-            os.chdir(cwd)
-
-            return file_name, zip_file
-
-        _, zip_file = zip_package()
+        self.notifier_zip = notifier_zip
 
         self.sns_topic = aws_sns.Topic(
             self, "SNSTopic",
@@ -184,7 +143,7 @@ class SLAChangeNotifier(cdk.Stack):
         self.sla_notifier_lambda_function = aws_lambda.Function(
             self, "SLANotifierLambdaFunction",
             function_name=self.stack_name,
-            code=aws_lambda.AssetCode(zip_file),
+            code=aws_lambda.AssetCode(self.notifier_zip),
             handler="sns.lambda_handler",
             runtime=aws_lambda.Runtime.PYTHON37,
             #layers=[self.dynamodb_lambda_layer],
