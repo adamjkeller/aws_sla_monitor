@@ -15,7 +15,6 @@ from aws_cdk import (
 )
 
 # TODO: Fix all code packaging, right now duplicated and zipping all the things.
-
 class BaseModule(cdk.Stack):
 
     def __init__(self, scope: cdk.Stack, id: str, stack_name_str, **kwargs):
@@ -23,19 +22,6 @@ class BaseModule(cdk.Stack):
         self.stack_name_str = stack_name_str
 
         # TODO: Figure out why lambda layers when updated can't apply to existing lambdas. It appears that a new one is created and the previous is removed which causes dependency failures.
-        #def zip_package():
-        #    cwd = os.getcwd()
-        #    file_name = 'dynamo-layer.zip'
-        #    zip_file = cwd + '/' + file_name
-
-        #    os.chdir('../src/')
-        #    sh.zip('-r9', zip_file, 'dynamodb.py')
-        #    os.chdir(cwd)
-
-        #    return file_name, zip_file
-
-        #_, zip_file = zip_package()
-
         #self.dynamodb_lambda_layer = aws_lambda.LayerVersion(
         #    self, "DynamoDBHelperLambdaLayer-{}".format(self.stack_name_str),
         #    code = aws_lambda.AssetCode(zip_file),
@@ -43,27 +29,12 @@ class BaseModule(cdk.Stack):
         #    description = "DynamoDB Shared Library"
         #)
 
+
 class SLAMonitor(cdk.Stack):
 
-    def __init__(self, scope: cdk.Stack, id: str, **kwargs):
+    def __init__(self, scope: cdk.Stack, id: str, git_hash, sla_zip='sla-monitor.zip', **kwargs):
         super().__init__(scope, id, **kwargs)
-
-        def zip_package():
-            cwd = os.getcwd()
-            file_name = 'aws-sla-monitor-cdk.zip'
-            zip_file = cwd + '/' + file_name
-
-            os.chdir('../package/')
-            sh.zip('-r9', zip_file, '.')
-            os.chdir('../src/')
-            sh.zip('-gr', zip_file, 'main.py')
-            sh.zip('-gr', zip_file, 'aws_crawler.py')
-            sh.zip('-gr', zip_file, 'dynamodb.py')
-            os.chdir(cwd)
-
-            return file_name, zip_file
-
-        _, zip_file = zip_package()
+        self.sla_zip = git_hash + "-" + sla_zip
 
         self.sla_monitor_dynamo_table = aws_dynamodb.Table(
             self, "DynamoTable{}".format("SLAMonitor"),
@@ -77,7 +48,7 @@ class SLAMonitor(cdk.Stack):
         self.sla_monitor_lambda_function = aws_lambda.Function(
             self, "SLAMonitorLambdaFunction",
             function_name=self.stack_name,
-            code=aws_lambda.AssetCode(zip_file),
+            code=aws_lambda.AssetCode(self.sla_zip),
             handler="main.lambda_handler",
             runtime=aws_lambda.Runtime.PYTHON37,
             tracing=aws_lambda.Tracing.Active,
@@ -95,7 +66,7 @@ class SLAMonitor(cdk.Stack):
         # Permissions to access sla_monitor dynamo table
         self.sla_monitor_dynamo_table.grant_read_write_data(self.sla_monitor_lambda_function.role)
 
-        self.sla_monitor_cw_event_rule = aws_events.EventRule(
+        self.sla_monitor_cw_event_rule = aws_events.Rule(
             self, "LambdaCWEventRuleSLAMonitor",
             description="Scheduled event to trigger AWS SLA monitor",
             enabled=True,
@@ -106,30 +77,18 @@ class SLAMonitor(cdk.Stack):
             ],
         )
 
+
 class StreamMonitor(cdk.Stack):
 
-    def __init__(self, scope: cdk.Stack, id: str, sla_monitor_dynamo_table, **kwargs):
+    def __init__(self, scope: cdk.Stack, id: str, sla_monitor_dynamo_table, git_hash, stream_zip='stream-monitor.zip', **kwargs):
         super().__init__(scope, id, **kwargs)
         self.sla_monitor_dynamo_table = sla_monitor_dynamo_table
-
-        def zip_package():
-            cwd = os.getcwd()
-            file_name = 'aws-sla-stream-monitor-cdk.zip'
-            zip_file = cwd + '/' + file_name
-
-            os.chdir('../src/')
-            sh.zip('-r9', zip_file, 'stream_processor.py')
-            sh.zip('-gr', zip_file, 'dynamodb.py')
-            os.chdir(cwd)
-
-            return file_name, zip_file
-
-        _, zip_file = zip_package()
+        self.stream_zip = git_hash + "-" + stream_zip
 
         self.sla_stream_monitor_lambda_function = aws_lambda.Function(
             self, "StreamMonitorLambdaFunction",
             function_name=self.stack_name,
-            code=aws_lambda.AssetCode(zip_file),
+            code=aws_lambda.AssetCode(self.stream_zip),
             handler="stream_processor.lambda_handler",
             runtime=aws_lambda.Runtime.PYTHON37,
             #layers=[self.dynamodb_lambda_layer],
@@ -160,24 +119,13 @@ class StreamMonitor(cdk.Stack):
             )
         )
 
+
 class SLAChangeNotifier(cdk.Stack):
 
-    def __init__(self, scope: cdk.Stack, id: str, sla_stream_monitor_dynamo_table, **kwargs):
+    def __init__(self, scope: cdk.Stack, id: str, sla_stream_monitor_dynamo_table, git_hash, notifier_zip='change-notifier.zip', **kwargs):
         super().__init__(scope, id, **kwargs)
         self.sla_stream_monitor_dynamo_table = sla_stream_monitor_dynamo_table
-
-        def zip_package():
-            cwd = os.getcwd()
-            file_name = 'aws-sla-monitor-cdk.zip'
-            zip_file = cwd + '/' + file_name
-
-            os.chdir('../src/')
-            sh.zip('-r9', zip_file, 'sns.py')
-            os.chdir(cwd)
-
-            return file_name, zip_file
-
-        _, zip_file = zip_package()
+        self.notifier_zip = git_hash + "-" + notifier_zip
 
         self.sns_topic = aws_sns.Topic(
             self, "SNSTopic",
@@ -187,7 +135,7 @@ class SLAChangeNotifier(cdk.Stack):
 
         self.subscribe_to_topic = aws_sns.Subscription(
             self, "TopicSubscribe",
-            endpoint='keladam@amazon.com',
+            endpoint=os.getenv("EMAIL_NOTIFICATION"),
             protocol=aws_sns.SubscriptionProtocol.Email,
             topic=self.sns_topic
         )
@@ -195,7 +143,7 @@ class SLAChangeNotifier(cdk.Stack):
         self.sla_notifier_lambda_function = aws_lambda.Function(
             self, "SLANotifierLambdaFunction",
             function_name=self.stack_name,
-            code=aws_lambda.AssetCode(zip_file),
+            code=aws_lambda.AssetCode(self.notifier_zip),
             handler="sns.lambda_handler",
             runtime=aws_lambda.Runtime.PYTHON37,
             #layers=[self.dynamodb_lambda_layer],
@@ -210,7 +158,7 @@ class SLAChangeNotifier(cdk.Stack):
         )
 
         # TODO: Make into reusable function
-        self.notifier_cw_event_rule = aws_events.EventRule(
+        self.notifier_cw_event_rule = aws_events.Rule(
             self, "LambdaCWEventRuleSLANotifier",
             description="Scheduled event to trigger AWS SLA monitor",
             enabled=True,
@@ -230,26 +178,30 @@ class SLAChangeNotifier(cdk.Stack):
 
 class MainApp(cdk.App):
 
-    def __init__(self, _stack_name, **kwargs):
+    def __init__(self, _stack_name, _git_hash, **kwargs):
         super().__init__(**kwargs)
         self._stack_name = _stack_name
+        self._git_hash = _git_hash
 
         self.base_stack = BaseModule(self, _stack_name + "-sla-monitor-base", stack_name_str=_stack_name + "-sla-monitor-base")
 
-        self.sla_monitor = SLAMonitor(self, _stack_name + "-sla-monitor")
+        self.sla_monitor = SLAMonitor(self, _stack_name + "-sla-monitor", git_hash=_git_hash)
 
         self.stream_monitor = StreamMonitor(
             self, _stack_name + "-sla-stream-monitor", 
-            sla_monitor_dynamo_table=self.sla_monitor.sla_monitor_dynamo_table
+            sla_monitor_dynamo_table=self.sla_monitor.sla_monitor_dynamo_table, 
+            git_hash=_git_hash
         )
 
         self.change_notifier = SLAChangeNotifier(
             self, _stack_name + "-sla-change-notifier", 
-            sla_stream_monitor_dynamo_table=self.stream_monitor.sla_stream_monitor_dynamo_table
+            sla_stream_monitor_dynamo_table=self.stream_monitor.sla_stream_monitor_dynamo_table,
+            git_hash=_git_hash
         )
 
 
 if __name__ == '__main__':
     _stack_name = os.getenv('STACK_NAME') or 'testing'
-    app = MainApp(_stack_name=_stack_name)
+    _git_sha = os.getenv("GIT_HASH") or sh.git("rev-parse", "--short=7", "HEAD").strip()
+    app = MainApp(_stack_name=_stack_name, _git_hash=_git_sha)
     app.run()
