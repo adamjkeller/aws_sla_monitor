@@ -9,3 +9,4 @@
 *venv
 *.env
 *egg*
+*cdk.out

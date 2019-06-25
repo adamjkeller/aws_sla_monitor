@@ -1,13 +1,10 @@
 AWS SLA Monitor
 ==============================
 
-[![TravisCI](https://travis-ci.org/uber/Python-Sample-Application.svg?branch=master)](https://travis-ci.org/uber/Python-Sample-Application)
-[![Coverage Status](https://coveralls.io/repos/uber/Python-Sample-Application/badge.png)](https://coveralls.io/r/uber/Python-Sample-Application)
-
 What Is This?
 -------------
 
-AWS SLA Monitor will monitor all published SLA's via the website: <url-here>
+AWS SLA Monitor will monitor all published SLA's update dates via the [website](https://aws.amazon.com/legal/service-level-agreements/)
 
 It will track if an update has been made to any of the listed SLA's and notify the users you define via email when one or more have been updated.
 
@@ -15,29 +12,61 @@ It will track if an update has been made to any of the listed SLA's and notify t
 How To Use This
 ---------------
 
-1. To deploy the environment, you need to set an environment variable for STACK_NAME. Example: `export STACK_NAME=testing-sla`
-2. Next, change the directory to `cdk` as the root. 
-3. Run `cdk synth --output ./`. This will give you the CloudFormation template for the stacks. Feel free to review.
-4. Deploy the environment by running: `cdk deploy`. You will be prompted to approve the deploy for each stack.
-5. That's it. Once deployed, you can review the cloudwatch logs for your Lambda functions to see how things are progressing. 
-6. Whoever you added as a subscriber to the email notification list will get an email from SNS to approve the subscription.
+The CDK Way:
 
-Testing
--------
+1. In the root of the project, run `./package_code.py`
+    - This will compile the lambda packages into zip files to be deployed.  
+2. Navigate to the cdk directory, and modify the environment variables in the `env_vars.sh` file. Here are the following that you should update/replace:
+    ```
+    export STACK_NAME='my-sla-monitor'
+    export EMAIL_NOTIFICATION='group-email@email-endpoint.com'
+    ```
+3. Source the env_vars.sh variables (`source ./env_vars.sh`) 
 
-1. Coming soon...
+4. Now, let's confirm that the cdk can compile the the code as CloudFormation templates:
+    ```
+    docker run -v $(pwd):/cdk \
+    -e AWS_SESSION_TOKEN=$AWS_SESSION_TOKEN \
+    -e AWS_DEFAULT_REGION=$AWS_DEFAULT_REGION \
+    -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
+    -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
+    -e STACK_NAME=$STACK_NAME \
+    -e EMAIL_NOTIFICATION=$EMAIL_NOTIFICATION \
+    -e GIT_HASH=$GIT_HASH \
+    -it adam9098/aws-cdk:$CDK_VERSION synth
+    ```
 
-Development
------------
+5) You should see stack-name.template.json files that were outputted to the cdk.out directory. These are the CloudFormation templates that will be used to be deployed via the cdk.
 
-If you want to work on this application we’d love your pull requests and tickets on GitHub!
+6) Next, run `cdk diff`, this will provide outputs via the command line of what you are building.
 
-1. If you open up a ticket, please make sure it describes the problem or feature request fully.
-2. If you send us a pull request, make sure you add a test for what you added.
+    ```
+    docker run -v $(pwd):/cdk \
+    -e AWS_SESSION_TOKEN=$AWS_SESSION_TOKEN \
+    -e AWS_DEFAULT_REGION=$AWS_DEFAULT_REGION \
+    -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
+    -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
+    -e STACK_NAME=$STACK_NAME \
+    -e EMAIL_NOTIFICATION=$EMAIL_NOTIFICATION \
+    -e GIT_HASH=$GIT_HASH \
+    -it adam9098/aws-cdk:$CDK_VERSION diff
+    ```
 
-Deploy to AWS
-----------------
+7) Assuming everything looks good, run `cdk deploy`.
 
-Click the button below to deploy via CloudFormation: (NOT FUNCTIONAL)
+    ```
+    docker run -v $(pwd):/cdk \
+    -e AWS_SESSION_TOKEN=$AWS_SESSION_TOKEN \
+    -e AWS_DEFAULT_REGION=$AWS_DEFAULT_REGION \
+    -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
+    -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
+    -e STACK_NAME=$STACK_NAME \
+    -e EMAIL_NOTIFICATION=$EMAIL_NOTIFICATION \
+    -e GIT_HASH=$GIT_HASH \
+    -it adam9098/aws-cdk:$CDK_VERSION deploy
+    ```
+8) That's it! The email address added to the env variables will receive an email from SNS to accept the subscription. 
 
-[![Launch Stack](https://cdn.rawgit.com/buildkite/cloudformation-launch-stack-button-svg/master/launch-stack.svg)](https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=buildkite&templateURL=https://s3.amazonaws.com/the-cf-stack-here)
+The CloudFormation way:
+
+1) Navigate to the `cfn-native` directory, and follow the Instructions.md there.

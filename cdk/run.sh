@@ -16,4 +16,4 @@ docker run -v $(pwd):/cdk \
 -e STACK_NAME=$STACK_NAME \
 -e EMAIL_NOTIFICATION=$EMAIL_NOTIFICATION \
 -e GIT_HASH=$GIT_HASH \
--it adam9098/aws-cdk:$CDK_VERSION deploy
+-it adam9098/aws-cdk:$CDK_VERSION synth

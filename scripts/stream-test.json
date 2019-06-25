@@ -27,7 +27,7 @@
 			"SizeBytes": 102,
 			"StreamViewType": "NEW_AND_OLD_IMAGES"
 		},
-		"eventSourceARN": "arn:aws:dynamodb:us-west-2:902607243125:table/aws_sla_monitor/stream/2019-05-02T00:45:09.662"
+		"eventSourceARN": "arn:aws:dynamodb:us-west-2:000000000000:table/aws_sla_monitor/stream/2019-05-02T00:45:09.662"
 	}, {
 		"eventID": "b7fa8fd7cbde85a1c06713f062dd5d01",
 		"eventName": "REMOVE",
@@ -56,7 +56,7 @@
 			"SizeBytes": 102,
 			"StreamViewType": "NEW_AND_OLD_IMAGES"
 		},
-		"eventSourceARN": "arn:aws:dynamodb:us-west-2:902607243125:table/aws_sla_monitor/stream/2019-05-02T00:45:09.662"
+		"eventSourceARN": "arn:aws:dynamodb:us-west-2:000000000000:table/aws_sla_monitor/stream/2019-05-02T00:45:09.662"
 	}, {
 		"eventID": "0288081573af012dde03377a36d36411",
 		"eventName": "REMOVE",
@@ -85,7 +85,7 @@
 			"SizeBytes": 102,
 			"StreamViewType": "NEW_AND_OLD_IMAGES"
 		},
-		"eventSourceARN": "arn:aws:dynamodb:us-west-2:902607243125:table/aws_sla_monitor/stream/2019-05-02T00:45:09.662"
+		"eventSourceARN": "arn:aws:dynamodb:us-west-2:000000000000:table/aws_sla_monitor/stream/2019-05-02T00:45:09.662"
 	}, {
 		"eventID": "c8c5479631768547e1c2eac5cd626135",
 		"eventName": "INSERT",
@@ -114,6 +114,6 @@
 			"SizeBytes": 102,
 			"StreamViewType": "NEW_AND_OLD_IMAGES"
 		},
-		"eventSourceARN": "arn:aws:dynamodb:us-west-2:902607243125:table/aws_sla_monitor/stream/2019-05-02T00:45:09.662"
+		"eventSourceARN": "arn:aws:dynamodb:us-west-2:000000000000:table/aws_sla_monitor/stream/2019-05-02T00:45:09.662"
 	}]
 }
